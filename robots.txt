@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ahmedaccount.github.io/MathDocs-CAS-website/sitemap.xml

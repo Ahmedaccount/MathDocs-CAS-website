@@ -1,0 +1,20 @@
+MathDocs CAS modification to MathLive 0.109.0
+
+Upstream: https://github.com/arnog/mathlive/tree/v0.109.0
+Unmodified mathlive.min.js SHA-256:
+8a2ff73a7b6a17c6da5086bdabd09619494e955b8da3d3e793f2496f3ee13035
+
+The onFocus() completion callback uses a zero-delay task instead of a 60 ms
+setTimeout(). This extension targets Chromium only. The callback still runs
+after the current browser event, preserving MathLive's recursion guard,
+native keyboard delegate, accessibility events and virtual keyboard setup.
+Using a task rather than a microtask also allows native click/focus handling
+to finish before MathLive focuses its keyboard delegate.
+No pending 60 ms timer can subsequently steal focus from the source textarea
+or the Google Docs input frame. No symbolic math code was changed.
+
+Reproduce with: node scripts/patch-mathlive.cjs path/to/original/mathlive.min.js
+The script verifies the original SHA-256 and the exact replacement.
+It also verifies and reapplies an already patched file idempotently.
+
+Original copyright and MIT license are unchanged; see LICENSE.txt.

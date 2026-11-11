@@ -1,0 +1,20 @@
+MathDocs CAS 2.0 preview — medfølgende tredjepartskode
+
+MathLive 0.109.0 — Arno Gourdol — MIT
+https://github.com/arnog/mathlive
+Licens: vendor/mathlive/LICENSE.txt
+MathLive indeholder KaTeX-skrifttyper; deres licenser følger nedenfor i vendor/mathlive.
+Lokal Chromium-fokuspatch: 60 ms-timer erstattet med en task uden fast ventetid.
+Ændring og reproduktion: vendor/mathlive/CHANGES.txt og scripts/patch-mathlive.cjs.
+
+Cortex Compute Engine 0.30.2 — CortexJS — MIT
+https://github.com/cortex-js/compute-engine
+Licens: vendor/compute-engine/LICENSE
+Bundle indeholder også decimal.js og complex-esm. Deres licenser følger i samme mappe.
+
+Nerdamer 1.1.13 — Martin Donk — MIT
+https://github.com/jiggzson/nerdamer
+Licens: vendor/nerdamer/LICENSE.txt
+
+Versionerne er fastlåst. Biblioteker og skrifttyper leveres lokalt med udvidelsen.
+Der indlæses ingen JavaScript-kode, matematikmotor eller skrifttype fra et CDN ved brug.
