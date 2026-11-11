@@ -1,0 +1,33 @@
+MathDocs CAS 2.0.5 — Chrome extension review
+
+MathDocs CAS is a two-part Google Docs mathematics tool. The Chrome extension provides the on-page editor and shortcuts. A separate Docs add-on/document adapter provides current-document access and saving. Installing the Chrome extension does not install the adapter automatically.
+
+No MathDocs account, password, API token or payment is required. Use your own Google account and a new synthetic test document. The public Docs add-on (Marketplace app 603315443505) is currently under Google review; it is not yet a public install dependency. Do not expect the unpublished Marketplace URL to install it.
+
+REPRODUCIBLE REVIEWER SETUP WHILE MARKETPLACE REVIEW IS PENDING
+1. Download the matching bound-document test adapter:
+https://ahmedaccount.github.io/MathDocs-CAS-website/reviewer/MathDocs-Docs-Editor-2.0.5.zip
+2. Extract it. In a new Google document choose Extensions > Apps Script.
+3. Replace the initial Code.gs with the archive's Code.gs. Add an HTML file named Sidebar and paste the entire Sidebar.html contents. In Project settings, enable the manifest file and use the archive's appsscript.json. Save and reload the Google document. The archive contains only adapter code, static editor/libraries, two scoped permissions, licences and instructions. No deployment credential is required. This is a reviewer/development setup, not the intended student installation.
+4. Open MathDocs > Open editor in the document menu once and authorize the current-document and custom-UI permissions in Google's dialog. The project's own manifest requests documents.currentonly and script.container.ui, not Drive-wide access. Close the menu editor.
+5. Install/enable this submitted Chrome extension in the same Chrome profile and reload the Google document. Click in document text. Press Ctrl+M (Windows/Linux/ChromeOS) or Option+M (Mac), or click the extension icon / on-page sigma button.
+
+TEST THE FULL CHROME WORKFLOW
+• Enter 1/2, Space, +1/3, Space. Press Enter (or Alt/Option+S) to calculate. Expect a rendered 5/6 fraction. Use Ctrl+Enter (Cmd+Enter on Mac), or Insert, to save. Expect source, smaller italic "mathdoc CAS used", and the centered answer with double rules.
+• Select/reopen the saved field, change +1/3 to +1/6, solve and insert. Expect 2/3 and one updated field. Plain document readers can view the PNG without MathDocs; source editing needs MathDocs. These are PNG images with mathematical source, not native Google equation objects.
+• In a new field enter a=5+4 and use Alt/Option+D to define it. In another field calculate a^2+2a+1; expect 100. Test document/shared versus private variables using the editor controls.
+• Enter y=x^3-3x and press Alt/Option+P directly, without calculating first. Adjust x/y ranges; insert. The expression and large graph are saved as separate fields.
+• Try invert on a 2x2 matrix, calculus, and triangle(3,4,5,cm). Use the click-to-open help for templates. Check ordinary Ctrl/Cmd+P printing still works.
+
+Video, recorded in real Docs with both parts (explicitly test build 2.0.5):
+https://www.youtube.com/watch?v=1w67cbmWq2c
+The recording uses the standalone Marketplace test adapter; the bound reviewer adapter above supplies the equivalent transport for your own test document.
+
+PUBLIC RELEASE PLAN
+The full student workflow will use two normal store installations, with a two-way guide for whichever component they have first. Chrome publication should be deferred until its Docs companion is installable. The manual code setup above is only for review/testing.
+Setup/release status: https://ahmedaccount.github.io/MathDocs-CAS-website/support.html
+Privacy: https://ahmedaccount.github.io/MathDocs-CAS-website/privacy.html
+The submitted Chrome ZIP contains the extension JavaScript, worker and libraries. The adapter ZIP contains Code.gs and the self-contained Sidebar.html, with licence notices. The GitHub source repository is not publicly accessible; no repository membership is required to download these reviewer files.
+
+IMPLEMENTATION AND DATA
+Editor/CAS JavaScript, worker, maths libraries and fonts are packaged locally. No remotely downloaded extension code, analytics, ads or independent formula server. Google hosts the separate Apps Script transport/UI and saves in the open document. Local drafts, pending saves and a bounded formula-image cache use storage. Input/results/used variables travel to the current document on save; used private values also travel with saved output. No payment details, passwords or broad browsing history are collected.

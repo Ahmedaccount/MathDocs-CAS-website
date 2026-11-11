@@ -1,0 +1,1 @@
+MathDocs CAS reviewer and development adapter. This is a manual test setup for extension review while the Docs add-on is awaiting publication. End users should use the two normal store installations when available. No credentials, project IDs or test-session URLs are included.
