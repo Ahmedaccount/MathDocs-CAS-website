@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.png binary
+*.woff2 binary
+# Preserve the bundled libraries and their original licences byte-for-byte.
+demo/vendor/** -text -whitespace linguist-vendored=true
