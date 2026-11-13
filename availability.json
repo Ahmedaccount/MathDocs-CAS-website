@@ -1,12 +1,12 @@
 {
-  "checkedOn": "2026-11-11",
+  "checkedOn": "2026-11-13",
   "docs": {
-    "status": "in-review",
+    "status": "oauth-pending",
     "url": null
   },
   "chrome": {
-    "status": "in-review",
-    "url": null
+    "status": "approved",
+    "url": "https://chromewebstore.google.com/detail/mathdocs-cas/hbgehponmodbjabfclgkcaoephmmjhgl"
   },
   "pricing": "free-preview"
 }
