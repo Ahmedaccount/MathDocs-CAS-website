@@ -1,12 +1,15 @@
 {
-  "checkedOn": "2026-11-13",
+  "checkedOn": "2026-11-14",
   "docs": {
     "status": "oauth-pending",
     "url": null
   },
   "chrome": {
     "status": "approved",
-    "url": "https://chromewebstore.google.com/detail/mathdocs-cas/hbgehponmodbjabfclgkcaoephmmjhgl"
+    "url": "https://chromewebstore.google.com/detail/mathdocs-cas/hbgehponmodbjabfclgkcaoephmmjhgl",
+    "publicVersion": "2.0.6",
+    "pendingVersion": "2.0.9",
+    "updateStatus": "in-review"
   },
   "pricing": "free-preview"
 }
