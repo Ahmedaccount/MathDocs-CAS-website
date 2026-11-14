@@ -18,7 +18,10 @@
     for(const match of latex.matchAll(/\\operatorname\{([A-Za-z]+)\}\s*(?:\\left)?\(/g))if(![...Object.values(functions),'log','ln','lb','lg'].includes(match[1]))fail('Unknown named function. Use supported mathematical functions.');
     const expression = ce.parse(latex.replace(/\\gamma\b/g,'\\mathrm{gamma}'), { canonical: false });
     if (!expression || !expression.isValid) fail('Formlen er ufuldstændig eller indeholder ukendt LaTeX. Kontrollér parenteser og kommandoer.');
-    return expression.json;
+    // Compute Engine treats bare G as Catalan's constant. Our documented
+    // variable namespace reserves e, i and C, and must preserve students' G.
+    const names=node=>Array.isArray(node)?node.map(names):['CatalanConstant','G_upright','G_italic'].includes(node)?'G':node;
+    return names(expression.json);
   }
   function splitArguments(source) {
     const stack = []; const out = []; let start = 0;
@@ -119,6 +122,41 @@
       default: fail('Denne notation understøttes ikke af CAS: '+op+'. Brug en af kommandoerne i hjælpen.');
     }
   }
+  function hasTranscendental(node,variable,variables,bound){
+    if(!Array.isArray(node))return false;
+    if(Object.hasOwn(functions,node[0])&&node[0]!=='Sqrt'||node[0]==='Power'&&nerdamer(translate(node[2],variables,bound)).variables().includes(variable)){
+      if(nerdamer(translate(node,variables,bound)).variables().includes(variable))return true;
+    }
+    return node.slice(1).some(n=>hasTranscendental(n,variable,variables,bound));
+  }
+  function trigZeroFamily(tree,variables,bound,variable){
+    if(!Array.isArray(tree)||tree[0]!=='Equal')return null;
+    const unwrap=n=>Array.isArray(n)&&n[0]==='Delimiter'?unwrap(n[1]):n;
+    let lhs=unwrap(tree[1]),rhs=unwrap(tree[2]);
+    if(!Array.isArray(lhs)||!['Sin','Cos','Tan'].includes(lhs[0]))[lhs,rhs]=[rhs,lhs];
+    if(!Array.isArray(lhs)||!['Sin','Cos','Tan'].includes(lhs[0])||nerdamer(translate(rhs,variables,bound)).toString()!=='0')return null;
+    const argument=translate(lhs[1],variables,bound),slope=nerdamer('diff('+argument+','+variable+')');
+    if(slope.toString()==='0'||slope.variables().length)return null;
+    const used=new Set([...nerdamer(argument).variables(),...Object.keys(variables),variable]);let index='k';while(used.has(index))index=index==='k'?'n':index==='n'?'m':index+'_1';
+    const offset=nerdamer(argument).sub(variable,'0'),base=lhs[0]==='Cos'?'pi/2':'0';
+    const value=nerdamer('('+base+'+'+index+'*pi-('+offset.toString()+'))/('+slope.toString()+')');
+    return {answerText:variable+' = '+value.toString()+', '+index+' ∈ Z',answerLatex:symbols.latex(variable)+'='+value.toTeX()+',\\quad '+symbols.latex(index)+'\\in\\mathbb{Z}'};
+  }
+  function admissibleRoot(tree,variable,value,variables){
+    const replacements={...variables,[variable]:String(value)};
+    let valid=true;
+    function visit(node){
+      if(!Array.isArray(node))return;
+      const denominator=['Divide','Rational'].includes(node[0])?node[2]:node[0]==='Power'&&typeof node[2]==='number'&&node[2]<0?node[1]:null;
+      if(denominator!==null){try{if(nerdamer(translate(denominator,replacements)).toString()==='0')valid=false;}catch{valid=false;}}
+      node.slice(1).forEach(visit);
+    }
+    visit(tree);if(!valid)return false;
+    // Check the unsimplified original equation as well: squaring a radical
+    // can introduce a candidate which is not a root of the original input.
+    try{const residual=Array.isArray(tree)&&tree[0]==='Equal'?'('+translate(tree[1],replacements)+')-('+translate(tree[2],replacements)+')':translate(tree,replacements);const r=nerdamer('simplify('+residual+')');if(!r.variables().length&&r.toString()!=='0'){const n=Number(r.evaluate().text('decimals'));if(Number.isFinite(n))return Math.abs(n)>1e-10?false:'approximate';}}catch{return false;}
+    return true;
+  }
   function plot(request,variables) {
     let source=String(request.latex||'').trim();
     const clean=source.replace(/\\(?:left|right|mleft|mright)/g,'').replace(/\\operatorname\{(?:\\mathrm\{)?plot\}\}?/g,'plot');
@@ -162,7 +200,7 @@
           const value=Number(expression.evaluate({x:String(x)}).text('decimals',14));
           const validDenominators=checks.every(check=>{const n=Number(check.evaluate({x:String(x),y:String(value)}).text('decimals',14));return Number.isFinite(n)&&n!==0;});
           if(validDenominators&&Number.isFinite(value)&&Math.abs(value)<=1e9){y=value;real++;}
-        }catch(ignored){}points.push([x,y]);
+        }catch(ignored){}finally{nerdamer.set('PARSE2NUMBER',false);}points.push([x,y]);
       }
     }
     if(real<2)fail('Ingen brugbar reel graf i intervallet. Ret definitionsmængden eller vælg andre x-grænser, fx 0 til 10 for sqrt(x).');
@@ -215,6 +253,9 @@
     let result, answerLatex, answerText, raw, canStore = true;
     let indefinite = op === 'integrate' || (Array.isArray(tree) && tree[0] === 'Integrate' && !Array.isArray(tree[2]));
     if (op === 'solve') {
+      const family=trigZeroFamily(tree,variables,bound,variable);
+      if(family)return {...family,variables,assigned,operation:op,notice:'Angles are in radians. The integer parameter describes all roots; this family is not saved as ans.',elapsed:0};
+      if(hasTranscendental(tree,variable,variables,bound))fail('General transcendental equations are not supported by this exact solver. Plot both sides to inspect intersections. For sin, cos or tan of a linear argument equal to zero, use solve(sin(x)=0,x).');
       const reduced = nerdamer('simplify('+expression+')');
       if (reduced.toString() === '0') {
         answerText = 'Identitet på udtrykkets definitionsmængde'; answerLatex = '\\text{Identitet på definitionsmængden}'; canStore = false;
@@ -223,8 +264,11 @@
       } else {
         const solutions = nerdamer.solveEquations(expression,variable);
         if (!solutions.length) fail('CAS fandt ingen løsninger. Det kan også betyde, at ligningstypen ikke understøttes; det beviser ikke, at løsninger ikke findes.');
-        const values = solutions.map(value => nerdamer(String(value)));
-        if(values.length===1){raw=values[0].toString();answerText=variable+' = '+raw;answerLatex=symbols.latex(variable)+'='+values[0].toTeX();}
+        const candidates=solutions.map(value=>({value,validity:admissibleRoot(tree,variable,value,variables)}));
+        if(candidates.some(c=>c.validity==='approximate'))fail('This equation produced numerical candidate roots, which cannot be certified as exact. Plot the expression to inspect its roots. Try factoring or simplifying the equation before solving.');
+        const values = candidates.filter(c=>c.validity).map(c=>nerdamer(String(c.value)));
+        if(!values.length){answerText='No valid candidate solutions';answerLatex='\\text{No valid candidate solutions}';canStore=false;}
+        else if(values.length===1){raw=values[0].toString();answerText=variable+' = '+raw;answerLatex=symbols.latex(variable)+'='+values[0].toTeX();}
         else{raw='['+values.map(value=>value.toString()).join(',')+']';answerText=variable+' ∈ {'+values.map(value=>value.toString()).join(', ')+'}';answerLatex=symbols.latex(variable)+'\\in\\left\\{'+values.map(value=>value.toTeX()).join(',\\;')+'\\right\\}';}
       }
     } else {
@@ -259,9 +303,10 @@
     symbols=globalThis.MathDocsSymbols;ce = new ComputeEngine.ComputeEngine();
     self.onmessage = event => {
       const started = performance.now();
+      nerdamer.set('PARSE2NUMBER',false);
       try { const result = calculate(event.data); result.elapsed = performance.now()-started; self.postMessage({ id:event.data.id,result }); }
       catch(error) { self.postMessage({ id:event.data.id,error:String(error.message || 'Beregningen mislykkedes.').slice(0,350) }); }
-      finally { nerdamer.clear('all'); }
+      finally { nerdamer.set('PARSE2NUMBER',false);nerdamer.clear('all'); }
     };
     self.postMessage({ ready:true });
   } catch(error) { self.postMessage({ fatal:'Matematikmotoren kunne ikke indlæses. Genindlæs udvidelsen under chrome://extensions.' }); }
