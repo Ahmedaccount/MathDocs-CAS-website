@@ -20,7 +20,7 @@
     if (!expression || !expression.isValid) fail('Formlen er ufuldstændig eller indeholder ukendt LaTeX. Kontrollér parenteser og kommandoer.');
     // Compute Engine treats bare G as Catalan's constant. Our documented
     // variable namespace reserves e, i and C, and must preserve students' G.
-    const names=node=>Array.isArray(node)?node.map(names):['CatalanConstant','G_upright','G_italic'].includes(node)?'G':node;
+    const names=node=>Array.isArray(node)?node.map(names):['G_upright','G_italic'].includes(node)?'G':node;
     return names(expression.json);
   }
   function splitArguments(source) {
@@ -301,6 +301,9 @@
   try {
     importScripts('symbols.js','geometry.js','vendor/compute-engine/compute-engine.min.js', 'vendor/nerdamer/all.min.js');
     symbols=globalThis.MathDocsSymbols;ce = new ComputeEngine.ComputeEngine();
+    // Override the bare-letter token, not every occurrence of the library's
+    // internal constant name (which can itself be a valid named variable).
+    ce.latexDictionary=[...ce.latexDictionary,{latexTrigger:'G',parse:'G'}];
     self.onmessage = event => {
       const started = performance.now();
       nerdamer.set('PARSE2NUMBER',false);
